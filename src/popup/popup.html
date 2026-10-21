@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  SeatOrbit - Sistema de Gerenciamento e Rotação de Contas ChatGPT
+  Desenvolvido por: @OTheMandaloriano
+  GitHub: https://github.com/OTheMandaloriano
+  Todos os direitos reservados.
+  ============================================================================
+-->
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SeatOrbit: Gerenciador de Contas e Limites</title>
+  <!-- Google Fonts: Inter e JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Barra Lateral de Navegação (Shadcn Tooltips) -->
+    <aside class="sidebar">
+      <div class="brand-container">
+        <div class="brand-logo" aria-label="SeatOrbit">
+          <svg class="brand-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Seat (User Silhouette) -->
+            <circle cx="12" cy="9" r="2.8" />
+            <path d="M7.8 16.2c0-2.2 1.9-3.7 4.2-3.7s4.2 1.5 4.2 3.7" />
+            <!-- Orbit Continuous Rotation Arcs -->
+            <path d="M3.8 11.5A8.5 8.5 0 0 1 18.2 4.8" />
+            <polyline points="14.5 4.8 18.5 4.8 18.5 8.8" />
+            <path d="M20.2 12.5A8.5 8.5 0 0 1 5.8 19.2" />
+            <polyline points="9.5 19.2 5.5 19.2 5.5 15.2" />
+          </svg>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" role="tablist">
+        <button class="nav-btn active" data-tab="overview" data-tooltip="Visão Geral" data-tooltip-side="right" role="tab" aria-selected="true" aria-label="Visão Geral">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </button>
+        <button class="nav-btn" data-tab="accounts" data-tooltip="Contas" data-tooltip-side="right" role="tab" aria-selected="false" aria-label="Contas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </button>
+        <button class="nav-btn" data-tab="rotation" data-tooltip="Automação" data-tooltip-side="right" role="tab" aria-selected="false" aria-label="Automação">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        </button>
+        <button class="nav-btn" data-tab="logs" data-tooltip="Logs" data-tooltip-side="right" role="tab" aria-selected="false" aria-label="Logs">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        </button>
+        <button class="nav-btn" data-tab="settings" data-tooltip="Configurações" data-tooltip-side="right" role="tab" aria-selected="false" aria-label="Configurações">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a class="nav-btn nav-btn-github" href="https://github.com/OTheMandaloriano" target="_blank" rel="noopener noreferrer" data-tooltip="GitHub @OTheMandaloriano" data-tooltip-side="right" aria-label="GitHub @OTheMandaloriano">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Fila Global de Notificações Sonner / Dynamic Island Toasts -->
+    <div class="toast-stack" id="toast-stack"></div>
+
+    <!-- Area de Conteudo Principal -->
+    <main class="main-viewport">
+
+      <!-- PAINEL 1: VISÃO GERAL -->
+      <section class="panel active" id="panel-overview" role="tabpanel">
+        <header class="panel-header">
+          <div class="header-text">
+            <h1 class="panel-title">SeatOrbit</h1>
+            <p class="panel-subtitle">Visão geral das suas contas e limites</p>
+          </div>
+          <div class="header-right-actions">
+            <button class="btn-icon" id="btn-sync-all" data-tooltip="Atualizar" data-tooltip-side="left" aria-label="Atualizar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- Bloco do Proprietário -->
+        <div class="card owner-card-slot" id="owner-bento-tile">
+          <div class="owner-setup-cta">
+            <div class="setup-icon-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            </div>
+            <div class="setup-content">
+              <div class="setup-title">Conectar Conta</div>
+              <div class="setup-desc">Conecte suas contas do ChatGPT para monitorar cotas, alternar sessões e gerenciar a rotação.</div>
+            </div>
+            <button class="btn btn-primary" id="btn-cta-owner-login">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              <span>Conectar Conta</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Grade de Metricas Principais (Linear Precision) -->
+        <div class="metrics-grid">
+          <div class="metric-card" data-tooltip="Total de contas cadastradas">
+            <div class="metric-top">
+              <span class="metric-label">Total de Contas</span>
+              <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="metric-value font-mono" id="val-total-accounts">0</div>
+            <div class="metric-subtext" id="sub-total-accounts">Nenhuma cadastrada</div>
+          </div>
+          <div class="metric-card" data-tooltip="Contas com limite liberado">
+            <div class="metric-top">
+              <span class="metric-label">Prontas para Uso</span>
+              <svg class="metric-icon text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="metric-value font-mono text-success" id="val-free-accounts">0</div>
+            <div class="metric-subtext" id="sub-free-accounts">Aguardando conexão</div>
+          </div>
+          <div class="metric-card" data-tooltip="Contas que atingiram o limite temporário">
+            <div class="metric-top">
+              <span class="metric-label">No Limite</span>
+              <svg class="metric-icon text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="metric-value font-mono text-danger" id="val-exhausted-accounts">0</div>
+            <div class="metric-subtext" id="sub-exhausted-accounts">Nenhuma bloqueada</div>
+          </div>
+          <div class="metric-card" id="card-metric-next-reset" data-tooltip="Tempo estimado para próxima liberação de limite">
+            <div class="metric-top">
+              <span class="metric-label" id="lbl-next-reset">Próxima Liberação</span>
+              <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="metric-value font-mono metric-value-sm" id="val-next-reset">Sem espera</div>
+            <div class="metric-subtext" id="sub-next-reset">Nenhum bloqueio ativo</div>
+          </div>
+        </div>
+
+        <!-- Slot de Recomendação Inteligente de Uso -->
+        <div id="smart-rec-slot"></div>
+
+        <!-- Lista Resumida de Contas -->
+        <div class="card fleet-card">
+          <div class="card-header">
+            <h2 class="card-title">Contas Conectadas</h2>
+            <button class="btn btn-secondary btn-xs btn-view-all" id="link-goto-accounts" type="button" data-tooltip="Gerenciar todas as contas">
+              <span>Ver todas</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+          <div class="fleet-list" id="overview-fleet-list">
+            <div class="empty-message">Nenhuma conta conectada.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAINEL 2: CONTAS -->
+      <section class="panel" id="panel-accounts" role="tabpanel">
+        <header class="panel-header">
+          <div class="header-text">
+            <h1 class="panel-title">Contas</h1>
+            <p class="panel-subtitle" id="accounts-count-sub">Nenhuma conta cadastrada</p>
+          </div>
+          <button class="btn btn-primary" id="btn-open-add-modal">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Conectar Conta</span>
+          </button>
+        </header>
+
+        <!-- Banner de Login em Andamento -->
+        <div class="banner-login" id="login-active-banner" hidden>
+          <svg class="spinner size-4 animate-spin text-accent" data-icon="inline-start" role="status" aria-label="Aguardando login" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          <div class="banner-text">
+            <strong>Aguardando login no ChatGPT</strong>
+            <span>Complete o login na aba aberta. A captura da sessão é automática.</span>
+          </div>
+          <button class="banner-close-btn" id="btn-cancel-pending-login" title="Cancelar espera" aria-label="Cancelar">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <!-- Feed de Contas -->
+        <div class="accounts-feed" id="accounts-feed"></div>
+
+        <!-- Estado Vazio -->
+        <div class="empty-state" id="accounts-empty-state">
+          <div class="empty-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3 class="empty-title">Nenhuma conta cadastrada</h3>
+          <p class="empty-desc">Adicione sua primeira conta do ChatGPT para monitorar cotas em tempo real, alternar sessões com 1 clique e ativar a rotação automática.</p>
+          <button class="btn btn-primary" id="btn-empty-add">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Conectar Primeira Conta</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- PAINEL 3: AUTOMAÇÃO -->
+      <section class="panel" id="panel-rotation" role="tabpanel">
+        <header class="panel-header">
+          <div class="header-text">
+            <h1 class="panel-title">Automação</h1>
+            <p class="panel-subtitle">Troca automática de contas por uso</p>
+          </div>
+        </header>
+
+        <!-- Controlador de Piloto Automático -->
+        <div class="card controller-card">
+          <div class="controller-info">
+            <h2 class="controller-title">Troca Automática de Contas</h2>
+            <p class="controller-desc">Alterna automaticamente para a próxima conta com limite livre assim que o uso da conta atual for atingido.</p>
+          </div>
+          <div class="controller-actions">
+            <button class="btn btn-primary" id="btn-start-autopilot">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Ativar Rotação</span>
+            </button>
+            <button class="btn btn-secondary" id="btn-run-once" data-tooltip="Trocar conta ativa" data-tooltip-side="top">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h16"/><path d="m16 21 4-4-4-4"/><path d="M20 7H4"/><path d="m8 3-4 4 4 4"/></svg>
+              <span>Trocar Conta</span>
+            </button>
+            <button class="btn btn-danger" id="btn-stop-autopilot" hidden>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              <span>Pausar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Próximas Contas -->
+        <div class="card queue-card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <h2 class="card-title">Próximas na Fila</h2>
+              <p class="card-subtitle">Contas que entram quando outra atingir o limite</p>
+            </div>
+            <span class="badge badge-secondary queue-status-chip active" id="queue-count-badge" hidden></span>
+          </div>
+          <div class="queue-list" id="queue-items-container"></div>
+          <div class="queue-empty-widget" id="queue-empty-msg">
+            <div class="queue-empty-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="queue-empty-title">Nenhuma conta na fila</div>
+            <p class="queue-empty-desc">Adicione contas para que o SeatOrbit troque automaticamente quando o limite for atingido.</p>
+            <button class="btn btn-primary" id="btn-queue-goto-accounts" type="button">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              <span>Adicionar Conta</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Regras de Automação -->
+        <div class="card rules-card">
+          <div class="card-header">
+            <h2 class="card-title">Regras de Rotação</h2>
+          </div>
+          <div class="settings-group">
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Liberar vaga ao esgotar</span>
+                <span class="setting-desc">Remove o convite do workspace quando a conta atingir 100% de uso para liberar a vaga para a próxima</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-auto-remove" checked>
+                <span class="switch-handle"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Convidar próxima conta da fila</span>
+                <span class="setting-desc">Convida automaticamente para o workspace a próxima conta disponível com limite livre ou resetado</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-auto-invite" checked>
+                <span class="switch-handle"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Intervalo de verificação</span>
+                <span class="setting-desc">Frequência de consulta de cotas e ciclo de rotação</span>
+              </div>
+              
+              <!-- Shadcn Select Primitivo -->
+              <div class="shadcn-select-wrapper select-compact" data-for-select="select-cycle-time">
+                <select id="select-cycle-time" hidden>
+                  <option value="60">1 min</option>
+                  <option value="180" selected>3 min</option>
+                  <option value="300">5 min</option>
+                  <option value="600">10 min</option>
+                </select>
+                <button class="shadcn-select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="shadcn-select-value">3 min</span>
+                  <svg class="shadcn-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="shadcn-select-popover" role="listbox" hidden>
+                  <div class="shadcn-select-item" data-value="60">
+                    <span>1 min</span>
+                  </div>
+                  <div class="shadcn-select-item selected" data-value="180">
+                    <span>3 min</span>
+                    <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div class="shadcn-select-item" data-value="300">
+                    <span>5 min</span>
+                  </div>
+                  <div class="shadcn-select-item" data-value="600">
+                    <span>10 min</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAINEL 4: CONSOLE DE LOGS -->
+      <section class="panel" id="panel-logs" role="tabpanel">
+        <header class="panel-header">
+          <div class="header-text">
+            <h1 class="panel-title">Console de Eventos</h1>
+            <p class="panel-subtitle">Histórico de tudo que aconteceu</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="btn-clear-logs" data-tooltip="Limpar histórico de logs">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            <span>Limpar</span>
+          </button>
+        </header>
+
+        <div class="terminal-card">
+          <div class="terminal-bar">
+            <div class="terminal-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <div class="terminal-filters">
+              <button class="filter-pill active" data-filter="all">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <span>Todos</span>
+              </button>
+              <button class="filter-pill" data-filter="ok">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sucesso</span>
+              </button>
+              <button class="filter-pill" data-filter="warn">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="0.8" fill="currentColor"/></svg>
+                <span>Alertas</span>
+              </button>
+              <button class="filter-pill" data-filter="error">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <span>Erros</span>
+              </button>
+            </div>
+          </div>
+          <div class="terminal-body font-mono" id="terminal-feed">
+            <div class="terminal-placeholder">Aguardando eventos do sistema...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAINEL 5: CONFIGURAÇÕES E ÁUDIO -->
+      <section class="panel" id="panel-settings" role="tabpanel">
+        <header class="panel-header">
+          <div class="header-text">
+            <h1 class="panel-title">Configurações e Áudio</h1>
+            <p class="panel-subtitle">Alertas sonoros, backups e preferências</p>
+          </div>
+        </header>
+
+        <!-- Alertas Sonoros (Shadcn Select) -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Alertas Sonoros</h2>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-audio-enabled" checked>
+              <span class="switch-handle"></span>
+            </label>
+          </div>
+
+          <div class="settings-group">
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Som de recuperação</span>
+                <span class="setting-desc">Toca quando uma conta recupera limite de mensagens</span>
+              </div>
+              
+              <!-- Shadcn Select Primitivo de Audio -->
+              <div class="shadcn-select-wrapper" data-for-select="select-audio-preset">
+                <select id="select-audio-preset" hidden>
+                  <option value="chime" selected>Sino Harmônico (Chime)</option>
+                  <option value="bell">Bell Cristalino (Bell)</option>
+                  <option value="harmony">Harmonia Suave (Harmony)</option>
+                  <option value="zen">Notificação Zen (Zen)</option>
+                  <option value="custom">Áudio Personalizado (Upload)</option>
+                </select>
+                <button class="shadcn-select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="shadcn-select-value">Sino Harmônico (Chime)</span>
+                  <svg class="shadcn-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="shadcn-select-popover" role="listbox" hidden>
+                  <div class="shadcn-select-item selected" data-value="chime">
+                    <span>Sino Harmônico (Chime)</span>
+                    <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div class="shadcn-select-item" data-value="bell">
+                    <span>Bell Cristalino (Bell)</span>
+                  </div>
+                  <div class="shadcn-select-item" data-value="harmony">
+                    <span>Harmonia Suave (Harmony)</span>
+                  </div>
+                  <div class="shadcn-select-item" data-value="zen">
+                    <span>Notificação Zen (Zen)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alerta de Reset Próximo / Oportunidade de Uso -->
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Avisar reset próximo</span>
+                <span class="setting-desc">Notificar quando uma conta estiver próxima de reiniciar a cota</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-audio-near-reset" checked>
+                <span class="switch-handle"></span>
+              </label>
+            </div>
+
+            <!-- Sub-configurações de Reset Próximo (exibidas quando ativado) -->
+            <div id="box-near-reset-settings">
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-name">Antecedência do aviso</span>
+                  <span class="setting-desc">Quanto tempo antes do reset emitir a notificação</span>
+                </div>
+                <div class="shadcn-select-wrapper select-compact" data-for-select="select-near-reset-mins">
+                  <select id="select-near-reset-mins" hidden>
+                    <option value="15">15 min</option>
+                    <option value="30" selected>30 min</option>
+                    <option value="45">45 min</option>
+                    <option value="60">1 hora</option>
+                  </select>
+                  <button class="shadcn-select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="shadcn-select-value">30 min</span>
+                    <svg class="shadcn-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="shadcn-select-popover" role="listbox" hidden>
+                    <div class="shadcn-select-item" data-value="15"><span>15 min</span></div>
+                    <div class="shadcn-select-item selected" data-value="30"><span>30 min</span><svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="shadcn-select-item" data-value="45"><span>45 min</span></div>
+                    <div class="shadcn-select-item" data-value="60"><span>1 hora</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-name">Som de reset próximo</span>
+                  <span class="setting-desc">Áudio tocado na notificação de oportunidade</span>
+                </div>
+                <div class="shadcn-select-wrapper" data-for-select="select-near-audio-preset">
+                  <select id="select-near-audio-preset" hidden>
+                    <option value="pulse" selected>Pulso Digital (Pulse)</option>
+                    <option value="cyber">Cyber Sintético (Cyber)</option>
+                    <option value="radar">Radar Tático (Radar)</option>
+                    <option value="flame">Chama Ativa (Flame)</option>
+                  </select>
+                  <button class="shadcn-select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="shadcn-select-value">Pulso Digital (Pulse)</span>
+                    <svg class="shadcn-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="shadcn-select-popover" role="listbox" hidden>
+                    <div class="shadcn-select-item selected" data-value="pulse"><span>Pulso Digital (Pulse)</span><svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="shadcn-select-item" data-value="cyber"><span>Cyber Sintético (Cyber)</span></div>
+                    <div class="shadcn-select-item" data-value="radar"><span>Radar Tático (Radar)</span></div>
+                    <div class="shadcn-select-item" data-value="flame"><span>Chama Ativa (Flame)</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slider de Volume -->
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Volume dos alertas</span>
+                <span class="setting-desc" id="label-volume-val">75%</span>
+              </div>
+              <div class="slider-box">
+                <input type="range" class="custom-slider" id="slider-volume" min="0" max="100" value="75">
+              </div>
+            </div>
+
+            <!-- Testar Sons -->
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Testar sons</span>
+                <span class="setting-desc">Ouvir os alertas configurados</span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" id="btn-test-sound" data-tooltip="Ouvir som de limite recuperado">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                  <span>Recuperação</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" id="btn-test-near-sound" data-tooltip="Ouvir som de reset próximo">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                  <span>Reset Próximo</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Biblioteca de Áudios Personalizados (Até 5 Slots) -->
+            <div class="custom-library-section">
+              <div class="library-header-bar">
+                <div class="library-header-left">
+                  <span class="setting-name">Biblioteca de Áudios</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btn-add-audio-slot" type="button" data-tooltip="Adicionar áudio personalizado (.mp3, .wav, .ogg)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>Adicionar Áudio</span>
+                </button>
+                <input type="file" id="input-upload-audio-slot" accept="audio/*,.mp3,.wav,.ogg" hidden>
+              </div>
+              <div id="custom-audios-list" class="custom-audios-list"></div>
+              <div id="custom-audios-empty" class="custom-audios-empty">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-muted"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <span>Nenhum áudio salvo. Guarde até 5 arquivos para usar como alerta personalizado.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Backup e Restauração -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Backup e Restauração</h2>
+          </div>
+          <p class="card-desc">Sessões e configurações ficam salvas no navegador. Exporte um arquivo JSON para restaurar a qualquer momento.</p>
+          <div class="actions-row">
+            <button class="btn btn-primary" id="btn-export-backup" data-tooltip="Exportar arquivo JSON">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Exportar</span>
+            </button>
+            <label class="btn btn-secondary file-upload-label" data-tooltip="Importar arquivo JSON">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Importar</span>
+              <input type="file" id="input-import-backup" accept=".json,application/json" hidden>
+            </label>
+          </div>
+        </div>
+
+        <!-- Redefinir Dados (AlertDialog) -->
+        <div class="card danger-card">
+          <div class="card-header">
+            <h2 class="card-title text-danger">Redefinir Dados</h2>
+          </div>
+          <p class="card-desc">Apaga todas as conexões, histórico e preferências locais da extensão.</p>
+          <button class="btn btn-danger" id="btn-factory-reset">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            <span>Apagar Tudo</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Rodapé Global da Aplicação -->
+      <footer class="app-footer">
+        <div class="footer-meta">
+          <span class="app-version font-mono">SeatOrbit v7.2.0</span>
+          <span class="footer-dot">•</span>
+          <a class="footer-author-link" href="https://github.com/OTheMandaloriano" target="_blank" rel="noopener noreferrer" data-tooltip="Perfil no GitHub">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <span>@OTheMandaloriano</span>
+          </a>
+        </div>
+      </footer>
+
+      <!-- Modal de Conexão de Contas (Midnight Precision) -->
+      <div class="dialog-backdrop" id="add-account-dialog-backdrop" hidden>
+        <div class="dialog-panel add-account-panel" role="dialog" aria-modal="true">
+          <div class="dialog-header">
+            <div class="dialog-icon-box info">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="19" y1="8" x2="19" y2="14"/>
+                <line x1="22" y1="11" x2="16" y2="11"/>
+              </svg>
+            </div>
+            <div class="dialog-text" style="flex: 1;">
+              <h3 class="dialog-title" id="add-modal-title">Conectar Conta do ChatGPT</h3>
+              <p class="dialog-desc">Escolha como deseja sincronizar sua conta ao SeatOrbit:</p>
+            </div>
+            <button class="btn-icon" id="btn-close-add-modal" aria-label="Fechar" style="margin: -4px -4px 0 0;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <!-- Alerta de Orientação Contextual do Modal -->
+          <div class="modal-notice-banner" id="add-modal-banner" hidden>
+            <div class="notice-icon-box" id="notice-icon-box">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="notice-content">
+              <strong class="notice-title" id="notice-title">Guia do ChatGPT não detectada</strong>
+              <p class="notice-desc" id="notice-desc">Abra o <strong>chatgpt.com</strong> e faça login, ou use a opção <strong>Login Guiado</strong> abaixo.</p>
+            </div>
+            <button class="notice-close" id="btn-close-notice" type="button" aria-label="Fechar aviso">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="add-options-list" id="box-add-options">
+            <!-- Opção 1: Captura Instantânea da Aba Ativa (Recomendado) -->
+            <button class="add-option-card" id="btn-opt-capture-tab" type="button">
+              <div class="add-opt-icon chatgpt-brand">
+                <svg width="18" height="18" viewBox="0 0 256 260" fill="currentColor"><path d="M239.184 106.203a64.716 64.716 0 0 0-5.576-53.103C219.452 28.459 191 15.784 163.213 21.74A65.586 65.586 0 0 0 52.096 45.22a64.716 64.716 0 0 0-43.23 31.36c-14.31 24.602-11.061 55.634 8.033 76.74a64.665 64.665 0 0 0 5.525 53.102c14.174 24.65 42.644 37.324 70.446 31.36a64.72 64.72 0 0 0 48.754 21.744c28.481.025 53.714-18.361 62.414-45.481a64.767 64.767 0 0 0 43.229-31.36c14.137-24.558 10.875-55.423-8.083-76.483Zm-97.56 136.338a48.397 48.397 0 0 1-31.105-11.255l1.535-.87 51.67-29.825a8.595 8.595 0 0 0 4.247-7.367v-72.85l21.845 12.636c.218.111.37.32.409.563v60.367c-.056 26.818-21.783 48.545-48.601 48.601Zm-104.466-44.61a48.345 48.345 0 0 1-5.781-32.589l1.534.921 51.722 29.826a8.339 8.339 0 0 0 8.441 0l63.181-36.425v25.221a.87.87 0 0 1-.358.665l-52.335 30.184c-23.257 13.398-52.97 5.431-66.404-17.803ZM23.549 85.38a48.499 48.499 0 0 1 25.58-21.333v61.39a8.288 8.288 0 0 0 4.195 7.316l62.874 36.272-21.845 12.636a.819.819 0 0 1-.767 0L41.353 151.53c-23.211-13.454-31.171-43.144-17.804-66.405v.256Zm179.466 41.695-63.08-36.63L161.73 77.86a.819.819 0 0 1 .768 0l52.233 30.184a48.6 48.6 0 0 1-7.316 87.635v-61.391a8.544 8.544 0 0 0-4.4-7.213Zm21.742-32.69-1.535-.922-51.619-30.081a8.39 8.39 0 0 0-8.492 0L99.98 99.808V74.587a.716.716 0 0 1 .307-.665l52.233-30.133a48.652 48.652 0 0 1 72.236 50.391v.205ZM88.061 139.097l-21.845-12.585a.87.87 0 0 1-.41-.614V65.685a48.652 48.652 0 0 1 79.757-37.346l-1.535.87-51.67 29.825a8.595 8.595 0 0 0-4.246 7.367l-.051 72.697Zm11.868-25.58 28.138-16.217 28.188 16.218v32.434l-28.086 16.218-28.188-16.218-.052-32.434Z"/></svg>
+              </div>
+              <div class="add-opt-info">
+                <div class="add-opt-title">
+                  <span>Capturar da Aba Ativa</span>
+                  <span class="badge-recommended">Recomendado</span>
+                </div>
+                <div class="add-opt-desc">Detecta a conta atualmente aberta no ChatGPT nesta janela com 1 clique.</div>
+              </div>
+            </button>
+
+            <!-- Opção 2: Login Guiado em Nova Aba -->
+            <button class="add-option-card" id="btn-opt-guided-login" type="button">
+              <div class="add-opt-icon web">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              </div>
+              <div class="add-opt-info">
+                <div class="add-opt-title">Login Guiado no Navegador</div>
+                <div class="add-opt-desc">Abre uma guia no ChatGPT para você fazer login com outra conta. O SeatOrbit monitora e captura.</div>
+              </div>
+            </button>
+
+            <!-- Opção 3: Inserir Token / JWT Manualmente -->
+            <button class="add-option-card" id="btn-opt-toggle-token" type="button">
+              <div class="add-opt-icon key">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+              </div>
+              <div class="add-opt-info">
+                <div class="add-opt-title">Inserir Token Manualmente</div>
+                <div class="add-opt-desc">Cole diretamente um Access Token (JWT) ou cookie de sessão (__Secure-next-auth.session-token).</div>
+              </div>
+            </button>
+          </div>
+
+          <!-- Formulário e Tutorial de Token Manual -->
+          <div class="add-token-form" id="box-add-token" hidden>
+            <div class="token-guide-card">
+              <div class="guide-header">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>Como obter o token no ChatGPT</span>
+              </div>
+              <ol class="guide-steps">
+                <li>No seu navegador, abra o <a href="https://chatgpt.com" target="_blank" rel="noreferrer">chatgpt.com</a> logado na conta desejada.</li>
+                <li>Pressione <kbd>F12</kbd> (ou clique com o botão direito &gt; <em>Inspecionar</em>).</li>
+                <li>Abra a aba <strong>Aplicativo</strong> (Application) &gt; expanda <strong>Cookies</strong> &gt; <code>https://chatgpt.com</code>.</li>
+                <li>Localize a chave <code>__Secure-next-auth.session-token</code> e copie seu valor.</li>
+                <li>Cole o código copiado no campo abaixo e clique em <strong>Conectar</strong>.</li>
+              </ol>
+              <div class="guide-hint">
+                Aceita também Access Token JWT (iniciado por <code>eyJhbGci...</code>) obtido na rota <code>/api/auth/session</code>.
+              </div>
+            </div>
+
+            <div class="input-field-group">
+              <label for="input-account-token" class="input-label">Token de Sessão ou JWT</label>
+              <textarea id="input-account-token" class="token-textarea font-mono" placeholder="Cole aqui o token __Secure-next-auth.session-token ou JWT eyJhbGci..." rows="3"></textarea>
+            </div>
+
+            <div class="form-actions-row">
+              <button class="btn btn-secondary btn-sm" id="btn-cancel-token" type="button">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Voltar</span>
+              </button>
+              <button class="btn btn-primary btn-sm" id="btn-submit-token" type="button">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+                <span>Conectar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Limite / Substituição de Áudio Personalizado (5 Slots) -->
+      <div class="dialog-backdrop" id="replace-audio-dialog-backdrop" hidden>
+        <div class="dialog-panel replace-audio-panel" role="dialog" aria-modal="true">
+          <div class="dialog-header">
+            <div class="dialog-icon-box warn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div class="dialog-text" style="flex: 1;">
+              <h3 class="dialog-title">Limite de Áudios Atingido</h3>
+              <p class="dialog-desc">Você atingiu o limite de 5 áudios personalizados. Escolha um arquivo para substituir ou remova um dos sons para liberar espaço:</p>
+            </div>
+            <button class="btn-icon" id="btn-close-replace-dialog" aria-label="Fechar" style="margin: -4px -4px 0 0;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="replace-audio-list" id="replace-audio-slots-list"></div>
+          <div class="dialog-footer" style="margin-top: 6px; justify-content: flex-end;">
+            <button class="btn btn-secondary btn-sm" id="btn-cancel-replace-dialog" type="button">
+              <span>Cancelar</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shadcn AlertDialog / Modal de Confirmação -->
+      <div class="dialog-backdrop" id="shadcn-dialog-backdrop" hidden>
+        <div class="dialog-panel" role="alertdialog" aria-modal="true">
+          <div class="dialog-header">
+            <div class="dialog-icon-box" id="shadcn-dialog-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></svg>
+            </div>
+            <div class="dialog-text">
+              <h3 class="dialog-title" id="shadcn-dialog-title">Confirmar Operação</h3>
+              <p class="dialog-desc" id="shadcn-dialog-desc">Esta ação não pode ser desfeita.</p>
+            </div>
+          </div>
+          <div class="dialog-footer">
+            <button class="btn btn-secondary" id="shadcn-dialog-cancel">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>Cancelar</span>
+            </button>
+            <button class="btn btn-primary" id="shadcn-dialog-confirm">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Confirmar</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Shadcn Tooltip Global -->
+  <div class="shadcn-tooltip" id="shadcn-global-tooltip" role="tooltip" hidden></div>
+
+  <script src="popup.js"></script>
+</body>
+<!--
+  ============================================================================
+  Fim do arquivo - SeatOrbit
+  Desenvolvido por: @OTheMandaloriano (https://github.com/OTheMandaloriano)
+  ============================================================================
+-->
+</html>

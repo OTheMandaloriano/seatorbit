@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "SeatOrbit: Gerenciador de Contas ChatGPT",
+  "short_name": "SeatOrbit",
+  "version": "7.2.0",
+  "description": "Gerenciamento inteligente de contas ChatGPT Workspace: troca automática, monitoramento em tempo real e alertas sonoros personalizáveis.",
+  "author": "OTheMandaloriano (https://github.com/OTheMandaloriano)",
+  "homepage_url": "https://github.com/OTheMandaloriano",
+  "permissions": [
+    "cookies",
+    "storage",
+    "unlimitedStorage",
+    "alarms",
+    "tabs",
+    "scripting",
+    "offscreen",
+    "downloads",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://*.chatgpt.com/*",
+    "https://auth.openai.com/*",
+    "https://*.openai.com/*"
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "SeatOrbit: Gerenciador de Contas"
+  },
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "src/content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/sounds/notify.wav",
+        "assets/sounds/recovered.wav",
+        "assets/icons/icon-16.png",
+        "assets/icons/icon-48.png",
+        "assets/icons/icon-128.png",
+        "src/offscreen/offscreen.html",
+        "src/offscreen/offscreen.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

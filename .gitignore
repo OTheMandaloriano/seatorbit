@@ -1,0 +1,17 @@
+# Ambientes e Editores
+.vscode/
+.idea/
+
+# Simuladores e Bancadas de Teste Locais
+src/popup/test_popup.html
+src/content/test_hud.html
+
+# Pacotes e Distribuições
+*.zip
+dist/
+dist_temp/
+
+# Logs e Arquivos de Sistema
+*.log
+Thumbs.db
+.DS_Store
