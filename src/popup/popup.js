@@ -66,6 +66,51 @@
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  function formatCreditValue(value) {
+    const numeric = typeof value === 'number'
+      ? value
+      : (typeof value === 'string' && /^\d+(?:[.,]\d+)?$/.test(value.trim())
+        ? Number(value.trim().replace(',', '.'))
+        : NaN);
+    if (!Number.isFinite(numeric)) return String(value || 'Saldo não informado');
+
+    return new Intl.NumberFormat('pt-BR', {
+      maximumFractionDigits: Number.isInteger(numeric) ? 0 : 2,
+    }).format(numeric);
+  }
+
+  function formatCreditStatus(credit) {
+    if (credit == null) return 'Saldo não informado';
+    const value = typeof credit === 'object'
+      ? (credit.available ?? credit.remaining ?? credit.balance ?? credit.amount ?? credit.count ?? null)
+      : credit;
+    if (value == null || value === '') return 'Saldo não informado';
+
+    const amount = formatCreditValue(value);
+    const singular = Number(String(value).replace(',', '.')) === 1;
+    return `${amount} crédito${singular ? '' : 's'}`;
+  }
+
+  function accountBenefits(conn) {
+    const quota = conn?.quota || {};
+    const resetCount = quota.resetCredits;
+    const resetText = resetCount == null
+      ? 'Disponibilidade não informada'
+      : Number(resetCount) === 0
+        ? 'Nenhum reset disponível'
+        : `${formatCreditValue(resetCount)} reset${Number(resetCount) === 1 ? '' : 's'} disponível${Number(resetCount) === 1 ? '' : 'is'}`;
+    const invite = conn?.invite || quota.invite;
+    let inviteText = 'Disponibilidade não informada';
+    if (invite?.available) {
+      const bonus = invite.bonus != null ? ` • bônus: ${formatCreditValue(invite.bonus)}` : '';
+      inviteText = `Convite disponível${bonus}`;
+    } else if (invite) {
+      inviteText = 'Nenhum convite disponível';
+    }
+
+    return { resetText, creditText: formatCreditStatus(quota.credit), inviteText, hasInvite: Boolean(invite?.available) };
+  }
+
   function gaugeMax(conn) {
     const w = conn?.quota?.windows;
     if (!w?.length) return 0;
@@ -185,6 +230,7 @@
 
   let DB = null;
   let currentLogFilter = 'all';
+  let limitRefreshInFlight = false;
 
   async function syncState() {
     // 1. Carregamento ultrarrápido pelo storage local da extensão (<2ms)
@@ -226,6 +272,19 @@
         automations: { running: false, autoRemove: true, autoInvite: true, cycleMs: 180000 },
         log: [],
       };
+    }
+  }
+
+  async function refreshLimits({ all = false } = {}) {
+    if (limitRefreshInFlight) return false;
+    limitRefreshInFlight = true;
+    try {
+      const response = await send({ type: all ? 'POLL' : 'POLL_ACTIVE' }, 20000);
+      if (response?.db) DB = response.db;
+      else await syncState();
+      return response?.ok !== false;
+    } finally {
+      limitRefreshInFlight = false;
     }
   }
 
@@ -815,6 +874,11 @@
   // Renderiza metricas
   function renderMetrics() {
     const conns = Object.values(DB?.connections || {});
+    const latestPoll = conns.reduce((latest, conn) => Math.max(latest, Number(conn.lastPolled) || 0), 0);
+    const syncStatus = $('#sync-status');
+    if (syncStatus) {
+      syncStatus.textContent = latestPoll ? `Atualizado ${timeAgo(latestPoll)}` : 'Aguardando atualização';
+    }
     const total = conns.length;
     const exhausted = conns.filter((c) => c.quota?.exhausted || gaugeMax(c) >= 100).length;
     const free = conns.filter((c) => !c.quota?.exhausted && gaugeMax(c) < 100).length;
@@ -1091,6 +1155,7 @@
         const s = sev(g);
         const q = c.quota;
         const isExhausted = q?.exhausted === true;
+        const benefits = accountBenefits(c);
 
         const avatarHtml = c.userImage
           ? `<img src="${esc(c.userImage)}" alt="">`
@@ -1189,6 +1254,12 @@
             </div>
 
             ${windowsHtml}
+
+            <div class="account-benefits" aria-label="Benefícios e disponibilidade da conta">
+              <span class="account-benefit"><span class="account-benefit-title"><img src="../../assets/icons/reset.svg" alt="" aria-hidden="true"><strong>Redefinições</strong></span>${esc(benefits.resetText)}</span>
+              <span class="account-benefit"><span class="account-benefit-title"><img src="../../assets/icons/credits.svg" alt="" aria-hidden="true"><strong>Créditos</strong></span>${esc(benefits.creditText)}</span>
+              <span class="account-benefit ${benefits.hasInvite ? 'available' : ''}"><span class="account-benefit-title"><img src="../../assets/icons/invite.svg" alt="" aria-hidden="true"><strong>Convites</strong></span>${esc(benefits.inviteText)}</span>
+            </div>
 
             <div class="acc-footer-toolbar font-mono">
               <span>Sincronizado ${timeAgo(c.lastPolled)}</span>
@@ -2020,8 +2091,7 @@
       btn.disabled = true;
       btn.classList.add('is-syncing');
       try {
-        await send({ type: 'POLL' });
-        await syncState();
+        await refreshLimits({ all: true });
         renderAll();
         const conns = Object.values(DB?.connections || {});
         if (conns.length === 0) {
@@ -2889,6 +2959,8 @@
 
     await syncState();
     renderAll();
+    await refreshLimits();
+    renderAll();
 
     // Watchdog de segurança: garante que qualquer skeleton remanescente seja substituído pelo UI real
     setTimeout(() => {
@@ -2903,6 +2975,14 @@
       await syncState();
       renderAll();
     }, 3500);
+
+    // Enquanto o popup estiver aberto, a conta em uso é consultada a cada 30 s.
+    // O serviço em segundo plano cuida das demais contas sem disputar cookies.
+    setInterval(async () => {
+      if (document.hidden || isDraggingQueue) return;
+      await refreshLimits();
+      renderAll();
+    }, 30000);
   };
 
   if (document.readyState === 'loading') {

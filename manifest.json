@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SeatOrbit: Gerenciador de Contas ChatGPT",
   "short_name": "SeatOrbit",
-  "version": "7.2.0",
+  "version": "7.3.0",
   "description": "Gerenciamento inteligente de contas ChatGPT Workspace: troca automática, monitoramento em tempo real e alertas sonoros personalizáveis.",
   "author": "OTheMandaloriano (https://github.com/OTheMandaloriano)",
   "homepage_url": "https://github.com/OTheMandaloriano",

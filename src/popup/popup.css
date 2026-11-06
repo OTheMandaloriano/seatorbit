@@ -311,6 +311,13 @@ input, select {
   gap: 8px;
 }
 
+.sync-status {
+  color: var(--color-ash);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
 
 /* ── Cartoes (Linear Precision) ──────────────────────────────────── */
 .card {
@@ -1069,7 +1076,8 @@ button:disabled,
   box-shadow: none !important;
 }
 
-.btn-icon.is-syncing svg {
+.btn-icon.is-syncing svg,
+.btn.is-syncing svg {
   animation: refreshSpin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
@@ -1443,6 +1451,53 @@ button:disabled,
   font-size: 11px;
   color: var(--color-ash);
   padding-top: 2px;
+}
+
+.account-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.account-benefit {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 8px;
+  border: 1px solid var(--color-graphite);
+  border-radius: var(--radius-btn);
+  background: rgba(255, 255, 255, 0.018);
+  color: var(--color-fog);
+  font-size: 10px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.account-benefit-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.account-benefit-title img {
+  width: 13px;
+  height: 13px;
+  opacity: 0.82;
+}
+
+.account-benefit strong {
+  color: var(--color-ash);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.account-benefit.available {
+  border-color: rgba(16, 185, 129, 0.28);
+  color: var(--color-pulse-green);
 }
 
 /* ── Aba de Rotação e Piloto Automático ──────────────────────────── */

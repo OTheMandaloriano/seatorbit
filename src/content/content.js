@@ -13,6 +13,8 @@
   let DB = null;
   let activeEmail = null;
   let isExpanded = false;
+  let lastSessionToken = null;
+  let lastSessionSavedAt = 0;
 
   const send = (msg, timeoutMs = 2500) =>
     new Promise((resolve) => {
@@ -190,6 +192,13 @@
         activeEmail = email;
         send({ type: 'IDENTITY_CHANGED', email }).catch(() => {});
         renderHud();
+      }
+      // Mantém a credencial recém-renovada no registro da conta ativa. O
+      // intervalo maior evita gravar o storage a cada sondagem de identidade.
+      if (email && j?.accessToken && (j.accessToken !== lastSessionToken || Date.now() - lastSessionSavedAt >= 300000)) {
+        lastSessionToken = j.accessToken;
+        lastSessionSavedAt = Date.now();
+        send({ type: 'SESSION_REFRESHED', email, accessToken: j.accessToken }).catch(() => {});
       }
     } catch {}
   }
@@ -2035,7 +2044,7 @@
   // Monitoramento de identidade e inicialização
   setInterval(probeSession, 10000);
   setTimeout(probeSession, 1200);
-  setInterval(probeUsage, 45000);
+  setInterval(probeUsage, 30000);
   setTimeout(probeUsage, 2500);
 
   if (document.readyState === 'loading') {

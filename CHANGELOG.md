@@ -6,6 +6,20 @@ O formato baseia-se em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0
 
 ---
 
+## [7.3.0] - 2026-11-06
+
+### Adicionado
+- Atualização automática da cota da conta em uso a cada 30 segundos no HUD, no popup e no alarme de segundo plano compatível.
+- Indicadores por conta para redefinições disponíveis, créditos e disponibilidade de convite ou bônus quando informados pela plataforma.
+
+### Corrigido
+- Persistência da sessão ativa após a renovação do token e dos cookies de autenticação.
+- Preservação de cookies de sessão sem convertê-los em cookies persistentes artificiais.
+- Concorrência entre atualizações simultâneas de cotas, que podia produzir estado desatualizado.
+
+### Alterado
+- Ação manual de sincronização agora é identificada claramente como **Atualizar** e mostra quando ocorreu a última atualização.
+
 ## [7.2.0] - 2026-10-20
 
 ### Adicionado

@@ -41,13 +41,14 @@ let DB = {
   _loginPending: false,
   _loginType: null, // 'owner' ou 'member'
   _loginPendingDesde: null,
-  meta: { createdAt: Date.now(), version: '7.2.0', name: 'SeatOrbit' },
+  meta: { createdAt: Date.now(), version: '7.3.0', name: 'SeatOrbit' },
 };
 
 let _loginTabId = null;
 let _loginPollerInterval = null;
 let _captureDebounce = null;
 let _refreshLock = false;
+let _pollAllPromise = null;
 
 // Helpers de Workspace e Papel de Proprietário
 function isWorkspacePlan(planType) {
@@ -130,7 +131,7 @@ async function load() {
         break;
       }
     }
-    DB.meta = { createdAt: Date.now(), version: '7.2.0', name: 'SeatOrbit' };
+    DB.meta = { createdAt: Date.now(), version: '7.3.0', name: 'SeatOrbit' };
     await save();
   }
   reconcileBusinessOwner();
@@ -250,8 +251,16 @@ function parseJwt(token) {
 
 async function getBrowserAuthCookies() {
   try {
-    const cookies = await chrome.cookies.getAll({ domain: 'chatgpt.com' });
-    return cookies.filter(c => isAuthCookie(c.name));
+    const groups = await Promise.all([
+      chrome.cookies.getAll({ domain: 'chatgpt.com' }),
+      chrome.cookies.getAll({ domain: 'auth.openai.com' }),
+      chrome.cookies.getAll({ domain: 'openai.com' }),
+    ]);
+    const unique = new Map();
+    groups.flat().filter(c => isAuthCookie(c.name)).forEach((cookie) => {
+      unique.set(`${cookie.storeId}:${cookie.domain}:${cookie.path}:${cookie.name}`, cookie);
+    });
+    return [...unique.values()];
   } catch (err) {
     console.warn('[SeatOrbit] Erro ao obter cookies:', err);
     return [];
@@ -285,8 +294,9 @@ async function setAuthCookies(cookiesList) {
   if (!Array.isArray(cookiesList)) return;
   for (const c of cookiesList) {
     if (!c || !c.name || !c.value) continue;
+    const cleanDomain = String(c.domain || 'chatgpt.com').replace(/^\./, '');
     const cookieDetails = {
-      url: 'https://chatgpt.com/',
+      url: `https://${cleanDomain}${c.path || '/'}`,
       name: c.name,
       value: c.value,
       path: c.path || '/',
@@ -296,16 +306,12 @@ async function setAuthCookies(cookiesList) {
     };
 
     // RFC 6265bis: Cookies __Host- NÃO podem ter atributo domain definido
-    if (!c.name.startsWith('__Host-')) {
-      if (c.domain && c.domain.startsWith('.')) {
-        cookieDetails.domain = c.domain;
-      }
+    if (!c.name.startsWith('__Host-') && c.domain && c.domain.startsWith('.')) {
+      cookieDetails.domain = c.domain;
     }
 
     if (c.expirationDate && c.expirationDate > Date.now() / 1000) {
       cookieDetails.expirationDate = c.expirationDate;
-    } else {
-      cookieDetails.expirationDate = Math.floor(Date.now() / 1000) + 86400 * 30;
     }
     await chrome.cookies.set(cookieDetails).catch((err) => {
       console.warn(`[SeatOrbit] Falha ao definir cookie ${c.name}:`, err);
@@ -620,6 +626,7 @@ async function saveAccountRecord({ sessionData, accountsCheck, initialUsage, aut
     lastRefresh: Date.now(),
     isActive: true,
     quota: initialQuota || existing?.quota || null,
+    invite: initialQuota?.invite || extractInviteDetails(accountsCheck) || existing?.invite || null,
     lastPolled: initialQuota ? Date.now() : (existing?.lastPolled || null),
     lastError: null,
   };
@@ -1186,8 +1193,67 @@ function normalizeUsage(raw) {
     extraCaps,
     resetCredits: raw?.rate_limit_reset_credits?.available_count ?? null,
     credit: raw?.credits || null,
+    invite: extractInviteDetails(raw),
     fetchedAt: Date.now(),
   };
+}
+
+// O endpoint de uso muda por plano. Esta leitura é conservadora: só exibe
+// convite ou bônus quando a própria resposta da plataforma os informa.
+function extractInviteDetails(source) {
+  let data = source?.referral_program || source?.referral || source?.invite_program || source?.invitation || source?.invite;
+  if (!data && source?.accounts && typeof source.accounts === 'object') {
+    data = Object.values(source.accounts)
+      .map((entry) => entry?.account || entry)
+      .map((entry) => entry?.referral_program || entry?.referral || entry?.invite_program || entry?.invitation || entry?.invite)
+      .find(Boolean);
+  }
+  if (!data) return null;
+  if (typeof data === 'string') return { available: true, link: data, code: null, bonus: null };
+  if (typeof data !== 'object') return null;
+
+  const link = data.referral_link || data.referral_url || data.invite_link || data.invite_url || data.url || null;
+  const code = data.referral_code || data.invite_code || data.code || null;
+  const bonus = data.bonus_credits ?? data.bonus_credit ?? data.bonus ?? data.reward ?? data.reward_credits ?? null;
+  const available = data.available ?? data.is_available ?? data.enabled ?? Boolean(link || code);
+
+  if (!available && !link && !code && bonus == null) return null;
+  return { available: available !== false, link, code, bonus };
+}
+
+function findConnectionByEmail(email) {
+  const normalized = String(email || '').toLowerCase();
+  if (!normalized) return Object.values(DB.connections || {}).find((conn) => conn.isActive) || null;
+  return Object.values(DB.connections || {}).find((conn) => conn.email?.toLowerCase() === normalized) || null;
+}
+
+async function updateActiveSession({ email, accessToken } = {}) {
+  const conn = findConnectionByEmail(email);
+  if (!conn) return { ok: false, error: 'Conta da sessão não cadastrada' };
+
+  for (const candidate of Object.values(DB.connections || {})) {
+    candidate.isActive = candidate.key === conn.key;
+  }
+  if (accessToken) conn.accessToken = accessToken;
+
+  const freshCookies = await getBrowserAuthCookies();
+  if (freshCookies.length) {
+    conn.sessionCookies = freshCookies.map((c) => ({
+      name: c.name,
+      value: c.value,
+      domain: c.domain,
+      path: c.path,
+      secure: c.secure,
+      httpOnly: c.httpOnly,
+      sameSite: c.sameSite,
+      expirationDate: c.expirationDate,
+    }));
+  }
+  conn.lastRefresh = Date.now();
+  conn.lastError = null;
+  await save();
+  updateBadge();
+  return { ok: true, key: conn.key };
 }
 
 async function pollSingle(key) {
@@ -1272,6 +1338,7 @@ async function pollSingle(key) {
 
     const q = normalizeUsage(data);
     conn.quota = q;
+    if (q.invite) conn.invite = q.invite;
     if (q.plan && !isWorkspacePlan(conn.planType)) {
       conn.planType = q.plan;
       if (DB.owner?.email === conn.email) {
@@ -1350,11 +1417,28 @@ async function pollSingle(key) {
   }
 }
 
+async function pollActive() {
+  const active = Object.values(DB.connections || {}).find((conn) => conn.isActive)
+    || findConnectionByEmail(DB.owner?.email);
+  if (!active) return null;
+  return pollSingle(active.key);
+}
+
 async function pollAll() {
-  for (const key of Object.keys(DB.connections)) {
-    await pollSingle(key);
+  // Popup, HUD e alarmes podem pedir atualização ao mesmo tempo. Uma única
+  // rodada evita alternâncias de cookies concorrentes e respostas obsoletas.
+  if (_pollAllPromise) return _pollAllPromise;
+  _pollAllPromise = (async () => {
+    for (const key of Object.keys(DB.connections)) {
+      await pollSingle(key);
+    }
+    updateBadge();
+  })();
+  try {
+    return await _pollAllPromise;
+  } finally {
+    _pollAllPromise = null;
   }
-  updateBadge();
 }
 
 // Operações no Workspace
@@ -1740,6 +1824,10 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
           }
         }
         respond({ db: DB }); return;
+      case 'SESSION_REFRESHED':
+        respond(await updateActiveSession({ email: msg.email, accessToken: msg.accessToken })); return;
+      case 'IDENTITY_CHANGED':
+        respond(await updateActiveSession({ email: msg.email })); return;
       case 'CANCEL_LOGIN':
         stopLoginPoller();
         _loginTabId = null;
@@ -1793,6 +1881,8 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
         await save(); updateBadge(); respond({ ok: true }); return;
       case 'POLL':
         await pollAll(); respond({ ok: true, db: DB }); return;
+      case 'POLL_ACTIVE':
+        await pollActive(); respond({ ok: true, db: DB }); return;
       case 'RUN_CYCLE': {
         const res = await runCycle(msg.manual === true || msg.force === true);
         respond({
@@ -1822,7 +1912,7 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
         const filename = `seatorbit-backup_${yyyy}-${mm}-${dd}_${hh}h${min}.json`;
 
         const payload = {
-          version: '7.2.0',
+          version: '7.3.0',
           app: 'SeatOrbit',
           exportedAt: now.toISOString(),
           owner: DB.owner,
@@ -1895,7 +1985,7 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
           _loginPending: false,
           _loginType: null,
           _loginPendingDesde: null,
-          meta: { createdAt: Date.now(), version: '7.2.0', name: 'SeatOrbit' },
+          meta: { createdAt: Date.now(), version: '7.3.0', name: 'SeatOrbit' },
         };
         _loginTabId = null;
         await save();
@@ -1935,7 +2025,9 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
 });
 
 // Alarmes periódicos
-chrome.alarms.create('poll', { periodInMinutes: 2 });
+// Chrome atual permite alarmes de 30 s. Em versões que ainda exigem 1 min,
+// o navegador ajusta o período e o content script mantém a conta aberta em 30 s.
+chrome.alarms.create('poll', { periodInMinutes: 0.5 });
 chrome.alarms.create('cycle', { periodInMinutes: 3 });
 chrome.alarms.create('keepAlive', { periodInMinutes: 15 });
 

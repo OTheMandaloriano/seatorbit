@@ -11,7 +11,7 @@
 [![Web Audio API](https://img.shields.io/badge/Web_Audio_API-00599C?style=for-the-badge&logo=w3c&logoColor=white)](https://developer.mozilla.org/pt-BR/docs/Web/API/Web_Audio_API)
 [![Chrome Storage](https://img.shields.io/badge/Storage_Local-161718?style=for-the-badge&logo=cachet&logoColor=white)](https://developer.chrome.com/docs/extensions/reference/api/storage)
 
-[![Versão](https://img.shields.io/badge/versão-7.2.0-10B981?style=flat-square)](CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/versão-7.3.0-10B981?style=flat-square)](CHANGELOG.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-0EA5E9?style=flat-square)](LICENSE)
 [![Status](https://img.shields.io/badge/status-produção-10B981?style=flat-square)](https://github.com/OTheMandaloriano/seatorbit/releases)
 [![Autor](https://img.shields.io/badge/autor-OTheMandaloriano-F97316?style=flat-square&logo=github)](https://github.com/OTheMandaloriano)
@@ -139,7 +139,7 @@ A tabela abaixo descreve o estado real das limitações do sistema e a justifica
 ### Opção 1: Pacote Oficial Pré-compilado (Recomendado)
 
 1. Baixe o pacote oficial compactado na página de [Releases](https://github.com/OTheMandaloriano/seatorbit/releases).
-2. Descompacte o arquivo `seatorbit-v7.2.0.zip` em uma pasta de sua escolha.
+2. Descompacte o arquivo `seatorbit-v7.3.0.zip` em uma pasta de sua escolha.
 3. No Google Chrome, Brave ou Microsoft Edge, acesse:
    ```
    chrome://extensions/
@@ -265,7 +265,7 @@ O projeto é desenvolvido e mantido por:
       </a>
       &nbsp;
       <a href="https://github.com/OTheMandaloriano/seatorbit/releases">
-        <img src="https://img.shields.io/badge/Releases-Baixar_v7.2.0-0EA5E9?style=flat-square&logo=googlechrome&logoColor=white" alt="Releases" />
+        <img src="https://img.shields.io/badge/Releases-Baixar_v7.3.0-0EA5E9?style=flat-square&logo=googlechrome&logoColor=white" alt="Releases" />
       </a>
     </td>
   </tr>
