@@ -16,6 +16,7 @@ O formato baseia-se em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0
 - Persistência da sessão ativa após a renovação do token e dos cookies de autenticação.
 - Preservação de cookies de sessão sem convertê-los em cookies persistentes artificiais.
 - Concorrência entre atualizações simultâneas de cotas, que podia produzir estado desatualizado.
+- Créditos genéricos sem vínculo verificável com a conta deixaram de ser exibidos como saldo individual.
 
 ### Alterado
 - Ação manual de sincronização agora é identificada claramente como **Atualizar** e mostra quando ocorreu a última atualização.

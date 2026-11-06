@@ -594,7 +594,7 @@ async function saveAccountRecord({ sessionData, accountsCheck, initialUsage, aut
     workspaceName = sessionData.user?.name ? `Workspace de ${sessionData.user.name}` : 'Workspace Principal';
   }
 
-  const initialQuota = initialUsage ? normalizeUsage(initialUsage) : null;
+  const initialQuota = initialUsage ? normalizeUsage(initialUsage, { email, accountId }) : null;
   // CRÍTICO: Não sobrescreve plano de workspace com cota individual de endpoint (que pode retornar 'plus')
   if (initialQuota?.plan && !isWorkspacePlan(planType)) {
     planType = initialQuota.plan;
@@ -1132,8 +1132,25 @@ async function apiFetch(url, token, accountId) {
   return r.json();
 }
 
+function extractVerifiedCredits(raw, identity = {}) {
+  const value = raw?.credits;
+  if (value == null) return { value: null, verified: false };
+
+  const source = typeof value === 'object' ? value : {};
+  const accountId = source.account_id ?? source.accountId ?? raw?.credits_account_id ?? raw?.account_id ?? raw?.accountId ?? null;
+  const email = String(source.email ?? source.account_email ?? raw?.account_email ?? raw?.email ?? raw?.user?.email ?? '').toLowerCase();
+  const expectedId = identity.accountId && !['personal', 'default'].includes(identity.accountId) ? identity.accountId : null;
+  const expectedEmail = String(identity.email || '').toLowerCase();
+  const idMatches = Boolean(expectedId && accountId && String(accountId) === String(expectedId));
+  const emailMatches = Boolean(expectedEmail && email && email === expectedEmail);
+
+  // Alguns planos retornam um saldo genérico sem informar a conta. Esse dado
+  // não pode ser exibido como crédito individual, pois pode se repetir.
+  return { value, verified: idMatches || emailMatches };
+}
+
 // Normalização de limites
-function normalizeUsage(raw) {
+function normalizeUsage(raw, identity = {}) {
   const rl = raw?.rate_limit || {};
   const windows = [];
 
@@ -1184,6 +1201,8 @@ function normalizeUsage(raw) {
       };
     });
 
+  const credits = extractVerifiedCredits(raw, identity);
+
   return {
     plan: raw?.plan_type || null,
     allowed: rl.allowed !== false,
@@ -1192,7 +1211,8 @@ function normalizeUsage(raw) {
     windows,
     extraCaps,
     resetCredits: raw?.rate_limit_reset_credits?.available_count ?? null,
-    credit: raw?.credits || null,
+    credit: credits.value,
+    creditVerified: credits.verified,
     invite: extractInviteDetails(raw),
     fetchedAt: Date.now(),
   };
@@ -1336,7 +1356,7 @@ async function pollSingle(key) {
 
     if (!data) return null;
 
-    const q = normalizeUsage(data);
+    const q = normalizeUsage(data, conn);
     conn.quota = q;
     if (q.invite) conn.invite = q.invite;
     if (q.plan && !isWorkspacePlan(conn.planType)) {
@@ -1996,12 +2016,12 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
       case 'TAB_USAGE_UPDATE': {
         const raw = msg.usage;
         if (raw) {
-          const q = normalizeUsage(raw);
           const userEmail = (raw.email || '').toLowerCase();
           const target = Object.values(DB.connections).find((c) =>
             (userEmail && c.email.toLowerCase() === userEmail) || c.isActive
           );
           if (target) {
+            const q = normalizeUsage(raw, target);
             target.quota = q;
             if (q.plan) {
               target.planType = q.plan;

@@ -79,7 +79,8 @@
     }).format(numeric);
   }
 
-  function formatCreditStatus(credit) {
+  function formatCreditStatus(credit, verified) {
+    if (!verified) return 'Saldo não verificado';
     if (credit == null) return 'Saldo não informado';
     const value = typeof credit === 'object'
       ? (credit.available ?? credit.remaining ?? credit.balance ?? credit.amount ?? credit.count ?? null)
@@ -108,7 +109,12 @@
       inviteText = 'Nenhum convite disponível';
     }
 
-    return { resetText, creditText: formatCreditStatus(quota.credit), inviteText, hasInvite: Boolean(invite?.available) };
+    return {
+      resetText,
+      creditText: formatCreditStatus(quota.credit, quota.creditVerified === true),
+      inviteText,
+      hasInvite: Boolean(invite?.available),
+    };
   }
 
   function gaugeMax(conn) {
